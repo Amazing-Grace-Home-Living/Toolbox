@@ -63,39 +63,7 @@ function Get-EndpointComplianceAudit {
                 $parsed = [datetimeoffset]$sync
                 $validSync = $true
             }
-        } elseif ($sync -is [string] -and $sync -match '(?:Z|[+-]\d{2}:\d{2})
-        $utcSync = if ($validSync) { $parsed.ToUniversalTime() } else { $null }
-        $freshness = if (-not $validSync -or $utcSync -gt $current.AddDays(1)) {
-            'unknown'
-        } elseif (($current - $utcSync).TotalDays -gt $StaleDays) {
-            'stale'
-        } else {
-            'recent'
-        }
-        $risk = if ($state -eq 'noncompliant') {
-            'high'
-        } elseif ($freshness -eq 'stale') {
-            'medium'
-        } elseif ($state -eq 'unknown' -or $freshness -eq 'unknown') {
-            'unknown'
-        } else {
-            'low'
-        }
-
-        [pscustomobject]@{
-            Id         = if ($null -eq $id) { '' } else { [string]$id }
-            Name       = if ($null -eq $name) { 'Unnamed' } else { [string]$name }
-            Platform   = if ($null -eq $platform) { 'Unknown' } else { [string]$platform }
-            Compliance = $state
-            Freshness  = $freshness
-            LastSync   = if ($null -eq $utcSync) { $null } else { $utcSync.ToString('o') }
-            Risk       = $risk
-        }
-    }
-}
-
-Export-ModuleMember -Function Get-EndpointComplianceAudit
-) {
+        } elseif ($sync -is [string] -and ($sync.EndsWith('Z') -or $sync.EndsWith('z') -or $sync -match '[+-]\d{2}:\d{2}')) {
             $validSync = [datetimeoffset]::TryParse(
                 $sync,
                 [System.Globalization.CultureInfo]::InvariantCulture,
