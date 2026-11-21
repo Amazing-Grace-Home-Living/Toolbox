@@ -36,3 +36,13 @@ coverage/
 *.DS_Store
 .idea/
 .vscode/
+
+# Endpoint inventory exports may contain names, device IDs and compliance details.
+# Never commit reports or temporary Python package artifacts.
+reports/
+**/reports/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
