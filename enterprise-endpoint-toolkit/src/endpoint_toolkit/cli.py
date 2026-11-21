@@ -10,6 +10,7 @@ from typing import Any
 
 from .api import graph_managed_devices, workspace_one_devices
 from .core import analyze_devices, summarize
+from .compare import compare_inventories
 from .report import write_reports
 
 def _read_devices(path: Path) -> list[dict[str, Any]]:
@@ -37,11 +38,27 @@ def _demo_devices() -> list[dict[str, Any]]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Read-only endpoint inventory audit")
-    parser.add_argument("source", choices=("demo", "analyze", "graph", "workspace-one"))
+    parser.add_argument("source", choices=("demo", "analyze", "graph", "workspace-one", "compare"))
     parser.add_argument("--input", type=Path, help="JSON source for analyze")
+    parser.add_argument("--baseline", type=Path, help="Earlier JSON inventory for compare")
+    parser.add_argument("--current", type=Path, help="Current JSON inventory for compare")
     parser.add_argument("--out", default="reports", help="Local report directory")
     parser.add_argument("--stale-days", type=int, default=30)
     args = parser.parse_args(argv)
+    if args.source == "compare":
+        if args.baseline is None or args.current is None:
+            parser.error("compare requires --baseline and --current")
+        result = compare_inventories(
+            _read_devices(args.baseline), _read_devices(args.current), stale_days=args.stale_days
+        )
+        output = Path(args.out)
+        output.mkdir(parents=True, exist_ok=True)
+        filename = output / "drift.json"
+        filename.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+        print(f"Compared {result['before_total']} previous and {result['after_total']} current devices")
+        print(f"Regressed: {result['counts']['regressed']}; new: {result['counts']['added']}; missing: {result['counts']['missing']}")
+        print(filename)
+        return 0
     if args.source == "demo":
         values = _demo_devices()
     elif args.source == "analyze":

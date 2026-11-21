@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""Reverse the combined command-line text, matching the other Nexus Toolbox ports."""
+"""Run the actual endpoint-audit toolkit from the repository root (Python 3.11+).
+
+For full installation use: python -m pip install -e enterprise-endpoint-toolkit
+"""
+from pathlib import Path
 import sys
 
-def main() -> None:
-    text = " ".join(sys.argv[1:])
-    print(text[::-1], end="\n" if text else "")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "enterprise-endpoint-toolkit" / "src"))
+from endpoint_toolkit.cli import main
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main(sys.argv[1:] or ["demo"]))

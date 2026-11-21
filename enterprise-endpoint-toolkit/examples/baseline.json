@@ -1,0 +1,5 @@
+[
+  {"id":"win-100","deviceName":"LAB-WIN-100","operatingSystem":"Windows","complianceState":"compliant","lastSyncDateTime":"2026-11-20T00:00:00Z"},
+  {"id":"mac-200","deviceName":"LAB-MAC-200","operatingSystem":"macOS","complianceState":"compliant","lastSyncDateTime":"2026-11-20T00:00:00Z"},
+  {"id":"ipad-300","deviceName":"LAB-IPAD-300","operatingSystem":"iOS","complianceState":"compliant","lastSyncDateTime":"2026-11-20T00:00:00Z"}
+]

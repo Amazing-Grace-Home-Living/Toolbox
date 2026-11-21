@@ -62,6 +62,26 @@ Import-Module ./powershell/EndpointToolkit.psm1 -Force
 
 For Pester 5+: `Invoke-Pester ./tests/EndpointToolkit.Tests.ps1 -CI`.
 
+## Baseline drift detection (offline)
+
+Compare two saved inventory exports without connecting to a tenant:
+
+```sh
+endpoint-toolkit compare --baseline examples/baseline.json --current examples/current.json --out reports
+```
+
+Review `reports/drift.json`: it identifies added, missing, regressed, improved, changed, and unchanged endpoints. Duplicate IDs are rejected rather than silently overwritten; records without IDs use name and platform as a fallback identifier. The report intentionally does **not** claim that a missing device was retired or that compliance data being unknown means a device is safe. Comparisons recompute both snapshots against the current stale-check-in threshold.
+
+## Functional PowerShell report command
+
+PowerShell 7+ provides an independent, credential-free reporting path:
+
+```powershell
+pwsh -File ./powershell/Invoke-EndpointComplianceReport.ps1 -InputPath ./examples/devices.json -OutDirectory ./reports
+```
+
+This normalizes common Intune / Workspace ONE field names, flags stale/unknown/noncompliant endpoints, and writes local `report.json` and `inventory.csv`. CSV formula injection is prevented by quoting potentially dangerous cell values. The report is intentionally read-only and does not send inventory data to any external service.
+
 ## Security and scope
 
 No tenant administration or device commands. No automatic remediation. No interactive sign-in or long-lived tokens. Graph paging is pinned to `graph.microsoft.com`; Workspace ONE calls stay on the configured HTTPS tenant host. Local input is untrusted, and the HTML reporter escapes all fields. Use `docs/ARCHITECTURE.md` for the roadmap and platform-specific limitations.
