@@ -83,7 +83,7 @@ $safeRows = @(
 if ($safeRows.Count -eq 0) {
     'Id,Name,Platform,Compliance,Freshness,LastSync,Risk' | Set-Content -LiteralPath $csvPath -Encoding utf8
 } else {
-    $safeRows | Export-Csv -LiteralPath $csvPath -NoTypeInformation -Encoding utf8
+    $safeRows | Export-Csv -LiteralPath $csvPath -Encoding utf8
 }
 Write-Output "Audited $($summary.total) devices; high=$($summary.high), stale=$($summary.stale), unknown=$($summary.unknown)"
 Write-Output "JSON: $jsonPath"
