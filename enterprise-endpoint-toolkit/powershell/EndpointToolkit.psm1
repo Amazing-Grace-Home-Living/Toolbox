@@ -53,7 +53,49 @@ function Get-EndpointComplianceAudit {
         $sync = Get-EndpointField -Device $Device -Names @('lastSyncDateTime', 'LastSeen', 'lastSeen', 'LastSyncDateTime')
         $parsed = [datetimeoffset]::MinValue
         $validSync = $false
-        if ($sync -is [string] -and $sync -match '(?:Z|[+-]\d{2}:\d{2})$') {
+        if ($sync -is [datetimeoffset]) {
+            $parsed = $sync
+            $validSync = $true
+        } elseif ($sync -is [datetime]) {
+            # PowerShell ConvertFrom-Json often auto-parses ISO timestamps to DateTime.
+            # Reject timestamps without timezone information rather than guessing.
+            if ($sync.Kind -ne [System.DateTimeKind]::Unspecified) {
+                $parsed = [datetimeoffset]$sync
+                $validSync = $true
+            }
+        } elseif ($sync -is [string] -and $sync -match '(?:Z|[+-]\d{2}:\d{2})
+        $utcSync = if ($validSync) { $parsed.ToUniversalTime() } else { $null }
+        $freshness = if (-not $validSync -or $utcSync -gt $current.AddDays(1)) {
+            'unknown'
+        } elseif (($current - $utcSync).TotalDays -gt $StaleDays) {
+            'stale'
+        } else {
+            'recent'
+        }
+        $risk = if ($state -eq 'noncompliant') {
+            'high'
+        } elseif ($freshness -eq 'stale') {
+            'medium'
+        } elseif ($state -eq 'unknown' -or $freshness -eq 'unknown') {
+            'unknown'
+        } else {
+            'low'
+        }
+
+        [pscustomobject]@{
+            Id         = if ($null -eq $id) { '' } else { [string]$id }
+            Name       = if ($null -eq $name) { 'Unnamed' } else { [string]$name }
+            Platform   = if ($null -eq $platform) { 'Unknown' } else { [string]$platform }
+            Compliance = $state
+            Freshness  = $freshness
+            LastSync   = if ($null -eq $utcSync) { $null } else { $utcSync.ToString('o') }
+            Risk       = $risk
+        }
+    }
+}
+
+Export-ModuleMember -Function Get-EndpointComplianceAudit
+) {
             $validSync = [datetimeoffset]::TryParse(
                 $sync,
                 [System.Globalization.CultureInfo]::InvariantCulture,
