@@ -57,6 +57,9 @@ Describe 'Offline compliance reports' {
         $report = Get-Content (Join-Path $output 'report.json') -Raw | ConvertFrom-Json
         $report.summary.total | Should -Be 3
         $report.summary.high | Should -Be 1
+        $report.summary.unknown | Should -Be 1
+        $report.summary.low | Should -Be 1
+        $report.devices[0].LastSync | Should -Not -BeNullOrEmpty
         @(Import-Csv (Join-Path $output 'inventory.csv')).Count | Should -Be 3
     }
 
