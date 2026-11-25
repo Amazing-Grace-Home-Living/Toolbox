@@ -52,6 +52,19 @@ class CompareTests(unittest.TestCase):
         after = [{"id": "a", "complianceState": "compliant", "lastSyncDateTime": "2026-11-20T00:00:00Z"}]
         self.assertEqual(compare_inventories(before, after, now=NOW)["counts"]["improved"], 1)
 
+    def test_missing_current_data_does_not_prove_improvement(self):
+        before = [{"id": "a", "complianceState": "noncompliant",
+                   "lastSyncDateTime": "2026-11-20T00:00:00Z"}]
+        for after in (
+            [{"id": "a", "lastSyncDateTime": "2026-11-20T00:00:00Z"}],
+            [{"id": "a", "complianceState": "compliant"}],
+            [{"id": "a", "lastSyncDateTime": "2026-01-01T00:00:00Z"}],
+        ):
+            with self.subTest(after=after):
+                result = compare_inventories(before, after, now=NOW)
+                self.assertEqual(result["counts"]["improved"], 0)
+                self.assertEqual(result["counts"]["changed"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

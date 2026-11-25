@@ -56,12 +56,12 @@ def graph_managed_devices(token: str, *, max_pages: int = 20,
         seen.add(next_url)
         page = _get_json(next_url, token, host="graph.microsoft.com",
                          prefix="/v1.0/deviceManagement/managedDevices", opener=opener)
-        values = page.get("value", [])
+        values = page.get("value")
         if not isinstance(values, list) or any(not isinstance(item, dict) for item in values):
             raise ValueError("unexpected Graph device list")
         devices.extend(values)
         next_url = page.get("@odata.nextLink")
-        if next_url is not None and not isinstance(next_url, str):
+        if next_url is not None and (not isinstance(next_url, str) or not next_url):
             raise ValueError("invalid Graph nextLink")
     return devices
 
@@ -70,14 +70,15 @@ def workspace_one_devices(base_url: str, token: str, *, tenant_code: str = "",
     """Fetch one read-only UEM search page. Inspect the tenant's API/help for paging."""
     parsed = urlsplit(base_url.rstrip("/"))
     if (parsed.scheme != "https" or not parsed.hostname or parsed.username or
-            parsed.password or parsed.port is not None or parsed.path not in ("", "/")):
+            parsed.password or parsed.port is not None or parsed.path not in ("", "/") or
+            parsed.query or parsed.fragment):
         raise ValueError("WS1_API_URL must be an HTTPS origin without a path")
     host = parsed.hostname
     page = _get_json(f"https://{host}/api/mdm/devices/search", token,
                      host=host, prefix="/api/mdm/devices/search",
                      headers={"aw-tenant-code": tenant_code} if tenant_code else {},
                      opener=opener)
-    values = page.get("Devices", page.get("devices", page.get("value", [])))
+    values = page.get("Devices", page.get("devices", page.get("value")))
     if not isinstance(values, list) or any(not isinstance(item, dict) for item in values):
         raise ValueError("unexpected Workspace ONE device response; check tenant version")
     # No misleading claim of full inventory: UEM tenant paging differs by release.

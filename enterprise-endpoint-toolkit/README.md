@@ -72,6 +72,8 @@ endpoint-toolkit compare --baseline examples/baseline.json --current examples/cu
 
 Review `reports/drift.json`: it identifies added, missing, regressed, improved, changed, and unchanged endpoints. Duplicate IDs are rejected rather than silently overwritten; records without IDs use name and platform as a fallback identifier. The report intentionally does **not** claim that a missing device was retired or that compliance data being unknown means a device is safe. Comparisons recompute both snapshots against the current stale-check-in threshold.
 
+A lower apparent risk is reported as **changed**, not improved, when the current compliance or check-in status is unknown. Investigate missing data before claiming remediation.
+
 ## Functional PowerShell report command
 
 PowerShell 7+ provides an independent, credential-free reporting path:

@@ -1,7 +1,7 @@
 """Compare two local endpoint inventory exports without changing any devices."""
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from .core import analyze_devices
@@ -34,8 +34,9 @@ def compare_inventories(
     now: datetime | None = None,
 ) -> dict[str, Any]:
     """Return device-level drift and counts; unknown does not count as compliant."""
-    previous = _indexed(analyze_devices(before, stale_days=stale_days, now=now))
-    current = _indexed(analyze_devices(after, stale_days=stale_days, now=now))
+    comparison_time = now or datetime.now(timezone.utc)
+    previous = _indexed(analyze_devices(before, stale_days=stale_days, now=comparison_time))
+    current = _indexed(analyze_devices(after, stale_days=stale_days, now=comparison_time))
     entries: list[dict[str, Any]] = []
     for key in sorted(previous.keys() | current.keys()):
         old = previous.get(key)
@@ -51,7 +52,8 @@ def compare_inventories(
         elif _SEVERITY[new["risk"]] > _SEVERITY[old["risk"]]:
             change = "regressed"
         elif _SEVERITY[new["risk"]] < _SEVERITY[old["risk"]]:
-            change = "improved"
+            # Missing data is not evidence that an earlier problem was resolved.
+            change = "changed" if "unknown" in (new["compliance"], new["freshness"]) else "improved"
         else:
             change = "changed"
         entries.append(

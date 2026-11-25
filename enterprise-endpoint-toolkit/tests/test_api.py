@@ -32,6 +32,30 @@ class ApiTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             graph_managed_devices("placeholder", max_pages=1, opener=opener)
 
+    def test_graph_rejects_missing_device_list_and_empty_next_link(self):
+        for body in ({"error": {"message": "unavailable"}}, {"value": [], "@odata.nextLink": ""}):
+            with self.subTest(body=body):
+                def opener(request, timeout):
+                    return Response(json.dumps(body).encode())
+                with self.assertRaises(ValueError):
+                    graph_managed_devices("placeholder", opener=opener)
+
+    def test_valid_empty_inventories_are_allowed(self):
+        def graph_opener(request, timeout):
+            return Response(b'{"value": []}')
+        def ws1_opener(request, timeout):
+            return Response(b'{"Devices": []}')
+        self.assertEqual(graph_managed_devices("placeholder", opener=graph_opener), [])
+        self.assertEqual(workspace_one_devices("https://my-tenant.example", "placeholder", opener=ws1_opener), [])
+
+    def test_ws1_rejects_missing_device_list_and_origin_query(self):
+        def opener(request, timeout):
+            return Response(b'{"message": "unavailable"}')
+        with self.assertRaises(ValueError):
+            workspace_one_devices("https://my-tenant.example", "placeholder", opener=opener)
+        with self.assertRaises(ValueError):
+            workspace_one_devices("https://my-tenant.example?unexpected=1", "placeholder", opener=opener)
+
     def test_ws1_origin_and_partial_page(self):
         def opener(request, timeout):
             self.assertEqual(request.get_method(), "GET")
